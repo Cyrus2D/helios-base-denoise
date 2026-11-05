@@ -1,0 +1,82 @@
+version: 1.0
+generated_by: IGT Project Bootstrapper
+project:
+  name: helios-base-denoise
+  has_submodules: false
+  root_path: .
+  checkpoint_mode: per-batch
+unavailable_units: []
+units:
+  - id: main
+    path: .
+    type: main
+    sub_projects: []
+    existing:
+      copilot_instructions: new
+      instructions_dir: new
+      agents_entry: new
+      claude_entry: new
+    copilot_instruction:
+      id: project-root
+      path: .github/copilot-instructions.md
+      description: Root map, build/run, instruction index, PR-review maintenance note
+      depends_on: [player-behaviors, coach-trainer, formations-config, build-run-scripts]
+      action: new
+      progress: not-started
+      write_mode: planner
+      last_worker: null
+    instructions:
+      - id: player-behaviors
+        name: Player Agent, Roles, Behaviors
+        path: .github/instructions/player-behaviors.instructions.md
+        apply_to: "src/player/**"
+        includes: [src/player/]
+        description: SamplePlayer, Strategy, roles, bhv_*, planner, setplay
+        priority: 1
+        depends_on: []
+        action: new
+        progress: not-started
+        write_mode: worker
+        last_worker: null
+      - id: coach-trainer
+        name: Coach and Trainer
+        path: .github/instructions/coach-trainer.instructions.md
+        apply_to: "src/coach/**,src/trainer/**"
+        includes: [src/coach/, src/trainer/]
+        description: SampleCoach and SampleTrainer
+        priority: 1
+        depends_on: []
+        action: new
+        progress: not-started
+        write_mode: worker
+        last_worker: null
+      - id: formations-config
+        name: Formations and Config Files
+        path: .github/instructions/formations-config.instructions.md
+        apply_to: "src/formations-*/**,src/*.conf"
+        includes: [src/formations-dt/]
+        description: formation conf files, player.conf, coach.conf
+        priority: 1
+        depends_on: []
+        action: new
+        progress: not-started
+        write_mode: worker
+        last_worker: null
+      - id: build-run-scripts
+        name: Build, librcsc Linkage, Start Scripts
+        path: .github/instructions/build-run-scripts.instructions.md
+        apply_to: "CMakeLists.txt,**/CMakeLists.txt,configure.ac,**/Makefile.am,src/*.sh*,eval/**,ssil/**"
+        includes: [.]
+        description: finding librcsc, start/train/keepaway scripts, eval, ssil
+        priority: 1
+        depends_on: []
+        action: new
+        progress: not-started
+        write_mode: worker
+        last_worker: null
+    entrypoints:
+      - {id: codex-entry, path: AGENTS.md, depends_on: [project-root], action: new, progress: not-started, write_mode: planner, last_worker: null}
+      - {id: claude-entry, path: CLAUDE.md, depends_on: [project-root], action: new, progress: not-started, write_mode: planner, last_worker: null}
+    skills: []
+    indexes: []
+    scripts: []

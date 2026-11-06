@@ -44,7 +44,7 @@ Coach and trainer are two thin rcsc agents: `SampleCoach` substitutes player typ
 - Keep the copyright banner in `main_*.cpp` (the comment asks for it to be retained).
 
 ## Integration Points
-- Launched by `src/start.sh.in:355-375` as `sample_coach` on `port + 2` (or `-P`), with `--coach-config coach.conf`, unless `-C` is passed.
+- Launched by `src/start.sh.in:406-424` as `sample_coach` on `port + 2` (or `-P`), with `--coach-config coach.conf`, unless `-C` is passed.
 - Not launched by `keepaway.sh.in` (it starts players and `sample_trainer` only, `:258-286`).
 - `train.sh.in` has the coach launch commented out (`:93-95`) and starts `${DIR}/helios_trainer` (`:18, 97`) with `--config_dir ${DIR}/formations-train` (`:23`).
 - The player-side parser is in `src/player/sample_freeform_message_parser.*`, registered at `sample_player.cpp:141`.

@@ -5,23 +5,23 @@ applyTo: "src/player/{neck_*,view_*,bhv_scan_field,bhv_basic_move,sample_player,
 
 ## TL;DR
 Helios never asks for better sensor data; it only steers WHERE and HOW WIDE the player looks, using librcsc age counters (`posCount`, `seenPosCount`, `dirCount`, `ghostCount`) to decide what is stale.
-- View width comes from `View_Tactical` (`view_tactical.cpp:49`), set every cycle in `SamplePlayer::doPreprocess`; quality is never lowered (`ViewQuality::LOW` appears nowhere in `src/`).
+- View width comes from `View_Tactical` (`view_tactical.cpp:49`; returns at once when the server param `full_view` is on), set every cycle in `SamplePlayer::doPreprocess`; quality is never lowered (`ViewQuality::LOW` appears nowhere in `src/`).
 - The neck is a per-behavior choice: `Neck_ScanField` (look at the least-recently-seen angles), `Neck_TurnToBallOrScan(count_thr)`, `Neck_TurnToBall`, and the intercept necks.
 - `synch_see : on` and `normal_view_time_thr : 20` (`src/player.conf:7-8`) make `View_Synch` pick narrow/normal so that `see` arrives in step with `sense_body`.
-- There is no use of `focus` (`Focus_*` files are built but never called), no `pointto`, and no gaussian/fullstate switch.
+- There is no use of `focus` (`Focus_*` files are built but never called), no `pointto`, and no gaussian/fullstate switch in C++ (`gaussian_see` is an optional `player.conf` key read by librcsc).
 - **Open the full file when:** changing view width, neck targets, ball-search logic, or count thresholds that trigger a look.
 
 ## View width
 - `SamplePlayer::doPreprocess` sets `View_Tactical` in all normal paths: frozen (`sample_player.cpp:549`), before kick-off (`:564`), ball search (`:591`), default (`:600`). Behaviors can override with `setViewAction` (last call wins).
-- `View_Tactical::execute` (`view_tactical.cpp:49-91`): BeforeKickOff / AfterGoal / penalty setup modes → `View_Wide`; `PenaltyTaken_` → `View_Synch`; our goalie free kick → wide for goalie (`:219-227`); otherwise `doDefault`.
-- `doDefault` (`view_tactical.cpp:98-211`), in order:
-  1. `! ball.posValid()` → WIDE (`:102`).
+- `View_Tactical::execute` (`view_tactical.cpp:49-97`): first `if ( ServerParam::i().fullView() ) return true;` (`:54-58`; the server then sends a 360° `see` every cycle, so no view action is needed; the same guard is at the top of `View_Synch::execute`, `view_synch.cpp:52-56`); BeforeKickOff / AfterGoal / penalty setup modes → `View_Wide`; `PenaltyTaken_` → `View_Synch`; our goalie free kick → wide for goalie (`:225-233`); otherwise `doDefault`.
+- `doDefault` (`view_tactical.cpp:104-217`), in order:
+  1. `! ball.posValid()` → WIDE (`:108`).
   2. Reach step = `min(self, mate, opp)` from `InterceptTable`; `ball_dist` = distance from queued next self pos to `ball.inertiaPoint(step)`.
   3. Goalie, ball not kickable and far/outside box: WIDE if the ball angle is outside neck range + normal half-width − 3, NORMAL if outside narrow (`:116-145`).
   4. `ball_dist > 40` → WIDE; `> 20` → NORMAL; `> 10` and ball angle from body `> 120°` → WIDE.
   5. Field player, nearest mate and opp both `> 5` from ball, `ball_dist > 10` → NORMAL (`:196-206`).
   6. Else `View_Synch`.
-- `View_Synch::execute` (`basic_actions/view_synch.cpp:50-93`): `SeeState::synch_see_mode()` → NARROW; not yet synchronised → `doTimerSynchView` (NARROW first, then NORMAL if the `see` arrived `< normalViewTimeThr` ms after `sense_body`, `:100-164`); synchronised: NORMAL when the last timing was `TIME_0_00`, else NARROW. Not-in-PlayOn and not synchronised returns false (no change).
+- `View_Synch::execute` (`basic_actions/view_synch.cpp:50-99`; returns true immediately under `full_view`): `SeeState::synch_see_mode()` → NARROW; not yet synchronised → `doTimerSynchView` (NARROW first, then NORMAL if the `see` arrived `< normalViewTimeThr` ms after `sense_body`, `:106-170`); synchronised: NORMAL when the last timing was `TIME_0_00`, else NARROW. Not-in-PlayOn and not synchronised returns false (no change).
 - Standard server trade-off (not read from config here): narrow = 60° cone with the fastest `see` rate, normal = 120°, wide = 180° with the slowest rate (see the server `visual-observation-detail` instruction). The code assumes this timing; it never reads `visual_detail` or noise parameters.
 - `Bhv_Emergency` (`basic_actions/bhv_emergency.cpp:51-62`, used when own position is invalid): `View_Synch` if quality is not HIGH, then `Bhv_ScanField`.
 

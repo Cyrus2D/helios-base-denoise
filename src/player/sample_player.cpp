@@ -283,6 +283,7 @@ SamplePlayer::actionImpl()
     //
     if ( role_ptr->acceptExecution( world() ) )
     {
+        this->addActionLabel( "role:accept_execution" );
         role_ptr->execute( this );
         return;
     }
@@ -293,6 +294,7 @@ SamplePlayer::actionImpl()
     //
     if ( world().gameMode().type() == GameMode::PlayOn )
     {
+        this->addActionLabel( "role:play_on" );
         role_ptr->execute( this );
         return;
     }
@@ -305,6 +307,7 @@ SamplePlayer::actionImpl()
     {
         dlog.addText( Logger::TEAM,
                       __FILE__": penalty kick" );
+        this->addActionLabel( "set_play:penalty_kick" );
         Bhv_PenaltyKick().execute( this );
         return;
     }
@@ -312,6 +315,7 @@ SamplePlayer::actionImpl()
     //
     // other set play mode
     //
+    this->addActionLabel( "set_play" );
     Bhv_SetPlay().execute( this );
 }
 
@@ -546,6 +550,7 @@ SamplePlayer::doPreprocess()
                       __FILE__": tackle wait. expires= %d",
                       wm.self().tackleExpires() );
         // face neck to ball
+        this->addActionLabel( "pre:frozen" );
         this->setViewAction( new View_Tactical() );
         this->setNeckAction( new Neck_TurnToBallOrScan( 0 ) );
         return true;
@@ -559,6 +564,7 @@ SamplePlayer::doPreprocess()
     {
         dlog.addText( Logger::TEAM,
                       __FILE__": before_kick_off" );
+        this->addActionLabel( "pre:before_kick_off" );
         Vector2D move_point =  Strategy::i().getPosition( wm.self().unum() );
         Bhv_CustomBeforeKickOff( move_point ).execute( this );
         this->setViewAction( new View_Tactical() );
@@ -572,6 +578,7 @@ SamplePlayer::doPreprocess()
     {
         dlog.addText( Logger::TEAM,
                       __FILE__": invalid my pos" );
+        this->addActionLabel( "pre:invalid_self_pos" );
         Bhv_Emergency().execute( this ); // includes change view
         return true;
     }
@@ -588,6 +595,7 @@ SamplePlayer::doPreprocess()
     {
         dlog.addText( Logger::TEAM,
                       __FILE__": search ball" );
+        this->addActionLabel( "pre:search_ball" );
         this->setViewAction( new View_Tactical() );
         Bhv_NeckBodyToBall().execute( this );
         return true;
@@ -614,6 +622,7 @@ SamplePlayer::doPreprocess()
     {
         dlog.addText( Logger::TEAM,
                       __FILE__": do queued intention" );
+        this->addActionLabel( "pre:intention" );
         return true;
     }
 
@@ -652,6 +661,7 @@ SamplePlayer::doShoot()
     {
         dlog.addText( Logger::TEAM,
                       __FILE__": shooted" );
+        this->addActionLabel( "pre:shoot" );
 
         // reset intention
         this->setIntention( static_cast< SoccerIntention * >( 0 ) );
@@ -678,6 +688,7 @@ SamplePlayer::doForceKick()
         dlog.addText( Logger::TEAM,
                       __FILE__": simultaneous kick" );
         this->debugClient().addMessage( "SimultaneousKick" );
+        this->addActionLabel( "pre:force_kick" );
         Vector2D goal_pos( ServerParam::i().pitchHalfLength(), 0.0 );
 
         if ( wm.self().pos().x > 36.0
@@ -713,6 +724,8 @@ SamplePlayer::doHeardPassReceive()
 
         return false;
     }
+
+    this->addActionLabel( "pre:heard_pass_receive" );
 
     int self_min = wm.interceptTable().selfStep();
     Vector2D intercept_pos = wm.ball().inertiaPoint( self_min );

@@ -4,7 +4,7 @@
 helios-base: sample RoboCup 2D team (player, coach, trainer) built on librcsc.
 - Entry points: `src/player/main_player.cpp`, `src/coach/main_coach.cpp`, `src/trainer/main_trainer.cpp`.
 - Per-cycle decisions: `SamplePlayer::actionImpl` -> Strategy/roles/behaviors/planner.
-- Has its own `basic_actions/`; does not use `rcsc/action`. Never sends `(gaussian_see)`.
+- Has its own `basic_actions/`; does not use `rcsc/action`. Helios code never sends `(gaussian_see)`; librcsc sends it only if `gaussian_see : on` is set in `src/player.conf` (off by default).
 - **Open the full file when:** you need build/run steps or the right scoped instruction.
 
 ## Project Overview
@@ -17,7 +17,7 @@ Reference client that connects to rcssserver (`../rcssserver-denoise`) through l
 ## Build, Test, Run
 - Autotools: `./bootstrap && ./configure [--with-librcsc=PREFIX] && make` (README.md).
 - CMake: finds librcsc via `LIBRCSC_INSTALL_DIR` (default probes `$HOME/.local`, `$HOME/local`).
-- Run with `src/start.sh` (host/port/team options). No tests, no CI.
+- Run with `src/start.sh` (host/port/team options; `--denoise-log-dir DIR --fullstate reference` enables the librcsc dataset logger). No tests, no CI.
 
 ## Conventions
 Add roles in `Strategy` constructor map (not `autoReg`). Keep CMake and `Makefile.am` source lists in sync.

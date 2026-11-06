@@ -47,9 +47,9 @@ helios-base builds with either CMake or autotools against an installed librcsc, 
 
 ## Integration Points
 ### `src/start.sh.in` (players + coach)
-- Options (`usage`, `:55-83`; parsing `:85-287`): `-h/--host`, `-p/--port`, `-P/--coach-port`, `-t/--teamname` (default `HELIOS_base`), `-n/--number` (default 11), `-u/--unum`, `-C/--without-coach`, `-f/--formation DIR` (default `formations-dt`), `--team-graphic FILE`, `--offline-logging`, `--offline-client-mode`, `--debug`, `--debug_*`, `--debug-start-time`, `--debug-end-time`, `--debug-server-connect`, `--debug-server-host/port`, `--debug-server-logging`, `--log-dir`, `--debug-log-ext`, `--fullstate ignore|reference|override`.
-- Runs `ping -c 1 $host` first (`:316`).
-- Starts the goalie with `-g` (`:330`), then players 2..N (`:335-353`), then `sample_coach` unless `-C` (`:355-375`).
+- Options (`usage`, `:55-83`; parsing `:85-287`): `-h/--host`, `-p/--port`, `-P/--coach-port`, `-t/--teamname` (default `HELIOS_base`), `-n/--number` (default 11), `-u/--unum`, `-C/--without-coach`, `-f/--formation DIR` (default `formations-dt`), `--team-graphic FILE`, `--offline-logging`, `--offline-client-mode`, `--debug`, `--debug_*`, `--debug-start-time`, `--debug-end-time`, `--debug-server-connect`, `--debug-server-host/port`, `--debug-server-logging`, `--log-dir`, `--debug-log-ext`, `--fullstate ignore|reference|override`, and the dataset-logger options `--denoise-log-dir DIR`, `--denoise-game-id ID` (default `<timestamp>_<team>`, shared by all players of one run), `--no-denoise-landmarks`, `--no-denoise-raw`. Use them with `--fullstate reference` so the ground truth is received. They are passed as `--denoise_log_dir/--denoise_game_id/--denoise_log_landmarks false/--denoise_log_raw false` to players only (`launch_player`, `:360-367`), not to the coach; output format: the librcsc `denoise-dataset` instruction.
+- Runs `ping -c 1 $host` first (`:357`).
+- Starts the goalie with `-g` (`launch_player -g`, `:374-381`), then players 2..N (`:386-400`), then `sample_coach` unless `-C` (`:406-424`).
 - `-u` only matters with `--offline-client-mode` (`:322, 340-346`); in online mode it has no effect.
 - Each process gets `--player-config src/player.conf --config_dir <set> -h HOST -p PORT -t TEAM` (`:308-309`).
 

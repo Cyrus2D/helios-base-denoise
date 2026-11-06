@@ -49,6 +49,12 @@ using namespace rcsc;
 bool
 View_Synch::execute( PlayerAgent * agent )
 {
+    if ( ServerParam::i().fullView() )
+    {
+        // the server always sends a 360 degree see every cycle
+        return true;
+    }
+
     if ( SeeState::synch_see_mode() )
     {
         dlog.addText( Logger::ACTION,

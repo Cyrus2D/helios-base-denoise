@@ -5,10 +5,10 @@ applyTo: "src/player/**"
 
 ## TL;DR
 Helios has no observation-noise model: it takes librcsc's fused `pos()/vel()` as truth and compensates only with (a) server MOVEMENT noise margins (`playerRand`, `ballRand`, `kickRand`), (b) fixed kickable-area shrinkage, and (c) age-count (`posCount`) thresholds and bonus steps.
-- `playerRand()/ballRand()` are movement/kick noise parameters, not the `see` distance/direction noise; none of the see-noise knobs (`dist_noise_rate`, `focus_dist_noise_rate`, `land_*`) or `gaussian_see` is read or sent.
+- `playerRand()/ballRand()` are movement/kick noise parameters, not the `see` distance/direction noise; none of the see-noise knobs (`dist_noise_rate`, `focus_dist_noise_rate`, `land_*`) is read by helios code, and `gaussian_see` is only an optional `player.conf` key handled inside librcsc (see §5).
 - Uncertainty of an opponent = `posCount()` converted to extra reach steps (`bound(0, posCount, 3..8)`); uncertainty of a teammate/ball = thresholds.
 - `posError`/`velError`/`pos_error` are never used in `src/player` (grep verified).
-- `fullstate` appears only in the start scripts (`src/start.sh.in:249-267`, `--use_fullstate`), not in C++.
+- `fullstate` appears only in the start scripts (`src/start.sh.in:258-277`, `--use_fullstate`), not in C++.
 - **Open the full file when:** adding denoising, changing a margin or `posCount` threshold, or hooking filtered pos/vel into planning.
 
 ## 1. Movement-noise margins (`playerRand` / `ballRand` / `kickRand`)
@@ -50,8 +50,8 @@ Interception margin: helios relies on librcsc `InterceptTable` (reach steps) and
 Self: `posValid()` only (`sample_player.cpp:571`, `basic_actions.cpp:91, 490`); `velValid()` guards in `body_*` (`body_dribble2008.cpp:87`, `body_hold_ball2008.cpp:92`, `body_kick_one_step.cpp:77`, `body_smart_kick.cpp:75`, `body_stop_ball.cpp:70`).
 
 ## 5. Observation-model switches
-- `gaussian_see`: never sent, never read (no `gaussian` string in the repo). `player.conf` has no noise keys (`src/player.conf:1-49`).
-- `fullstate`: only `--fullstate ignore|reference|override` options in `src/start.sh.in:249-267` → `--use_fullstate`/`--debug_fullstate` passed to librcsc; no C++ branch.
+- `gaussian_see`: helios C++ never sends or reads it (no `gaussian` string in the repo). It can be enabled with `gaussian_see : on` in `src/player.conf`: librcsc reads it (`player_config.cpp:224`) and sends `(gaussian_see)` (`player_agent.cpp:1367`). It is absent from the shipped `player.conf`, and `start.sh` has no flag for it. The server param `see_noise_free` makes the server ignore it for distance.
+- `fullstate`: only `--fullstate ignore|reference|override` options in `src/start.sh.in:258-277` → `--use_fullstate`/`--debug_fullstate` passed to librcsc; no C++ branch. `--fullstate reference` plus `--denoise-log-dir` is the dataset-logging setup (see [build-run-scripts](build-run-scripts.instructions.md)).
 - `synch_see : on`, `normal_view_time_thr : 20` are the only see-related knobs (`src/player.conf:7-8`).
 
 ## Candidate hook points for helios-side denoising
@@ -62,7 +62,7 @@ Self: `posValid()` only (`sample_player.cpp:571`, `basic_actions.cpp:91, 490`); 
 5. Count thresholds as tuning constants: `sample_player.cpp:582`, `simple_pass_checker.cpp:54-55`, `actgen_shoot.cpp:44`, `predict_state.cpp:46`.
 6. Neck/view: use predicted error growth (instead of `seenPosCount`) in `Neck_ScanPlayers::calculate_score` (`neck_scan_players.cpp:268-289`) and `View_Tactical::doDefault`.
 7. Communication: richer ball/player relays (`sayBallAndPlayers`, `sample_communication.cpp:594`) and re-enabling `saySelf`/offside-line messages; decode-side fusion in librcsc.
-8. Config: send `(gaussian_see)` only if librcsc `gaussianSee()` is enabled (default false) — no helios change needed beyond `player.conf`.
+8. Config: `(gaussian_see)` is sent only if librcsc `gaussianSee()` is enabled (default false) — no helios change needed beyond `player.conf`.
 
 ## Not found
 - No use of `posError`, `velError`, `rposError`, variance/covariance, Kalman filter, or any filtering in helios; no gaussian_see/fullstate C++ handling.

@@ -51,6 +51,12 @@ View_Tactical::execute( PlayerAgent * agent )
     dlog.addText( Logger::TEAM,
                   __FILE__": View_Tactical" );
 
+    if ( ServerParam::i().fullView() )
+    {
+        // the server always sends a 360 degree see every cycle
+        return true;
+    }
+
     // when our free kick mode, view width is set to WIDE
     switch ( agent->world().gameMode().type() ) {
     case GameMode::BeforeKickOff:

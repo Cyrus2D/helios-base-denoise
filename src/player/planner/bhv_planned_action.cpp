@@ -216,6 +216,20 @@ Bhv_PlannedAction::execute( PlayerAgent * agent )
 
     const CooperativeAction & first_action = M_chain_graph.getFirstAction();
 
+    // selection label for the dataset logger; "exec:" labels are added below only on paths that really execute
+    {
+        static const char * const category_names[] = { "hold", "dribble", "pass", "shoot", "clear", "move", "no_action" };
+        const int category = static_cast< int >( first_action.category() );
+        std::string label = "plan:";
+        label += ( 0 <= category && category < 7 ? category_names[category] : "unknown" );
+        if ( first_action.description() )
+        {
+            label += ':';
+            label += first_action.description();
+        }
+        agent->addActionLabel( label );
+    }
+
     ActionChainGraph::debug_send_chain( agent, M_chain_graph.getAllChain() );
 
     const Vector2D goal_pos = SP.theirTeamGoalPos();
@@ -229,6 +243,7 @@ Bhv_PlannedAction::execute( PlayerAgent * agent )
             if ( Body_ForceShoot().execute( agent ) )
             {
                 agent->setNeckAction( new Neck_TurnToGoalieOrScan( 2 ) );
+                agent->addActionLabel( "exec:shoot" );
                 return true;
             }
 
@@ -267,6 +282,7 @@ Bhv_PlannedAction::execute( PlayerAgent * agent )
 
             if ( Bhv_NormalDribble( first_action, neck ).execute( agent ) )
             {
+                agent->addActionLabel( "exec:dribble" );
                 return true;
             }
             break;
@@ -290,6 +306,7 @@ Bhv_PlannedAction::execute( PlayerAgent * agent )
                               __FILE__" (Bhv_PlannedAction) cancel hold. clear ball" );
                 Body_ClearBall().execute( agent );
                 agent->setNeckAction( new Neck_ScanField() );
+                agent->addActionLabel( "exec:clear_ball" );
                 return true;
             }
 
@@ -299,6 +316,7 @@ Bhv_PlannedAction::execute( PlayerAgent * agent )
 
             Body_HoldBall().execute( agent );
             agent->setNeckAction( new Neck_ScanField() );
+            agent->addActionLabel( "exec:hold" );
             return true;
             break;
         }
@@ -308,6 +326,7 @@ Bhv_PlannedAction::execute( PlayerAgent * agent )
             dlog.addText( Logger::TEAM,
                           __FILE__" (Bhv_PlannedAction) pass" );
             Bhv_PassKickFindReceiver( M_chain_graph ).execute( agent );
+            agent->addActionLabel( "exec:pass" );
             return true;
             break;
         }
@@ -322,6 +341,7 @@ Bhv_PlannedAction::execute( PlayerAgent * agent )
                                  SP.maxDashPower() ).execute( agent ) )
             {
                 agent->setNeckAction( new Neck_ScanField() );
+                agent->addActionLabel( "exec:move" );
                 return true;
             }
 
@@ -333,6 +353,7 @@ Bhv_PlannedAction::execute( PlayerAgent * agent )
             dlog.addText( Logger::TEAM,
                           __FILE__" (Bhv_PlannedAction) no action" );
 
+            agent->addActionLabel( "exec:no_action" );
             return true;
             break;
         }
@@ -419,6 +440,7 @@ Bhv_PlannedAction::doTurnToForward( PlayerAgent * agent )
     {
         Body_TurnToPoint( face_point ).execute( agent );
         agent->setNeckAction( new Neck_ScanField() );
+        agent->addActionLabel( "exec:turn_to_forward" );
         return true;
     }
 
@@ -474,6 +496,7 @@ Bhv_PlannedAction::doTurnToForward( PlayerAgent * agent )
                   __FILE__": (doTurnToFoward) register intention" );
     agent->setIntention( new IntentionTurnTo( face_point ) );
 
+    agent->addActionLabel( "exec:turn_keep_ball" );
     return true;
 }
 

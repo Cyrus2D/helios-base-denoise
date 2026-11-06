@@ -53,9 +53,9 @@ Every `formations-dt` file uses the same role set: Goalie 1, CenterBack 2, SideB
 - All other keepaway files reuse the standard dt role names (Goalie, CenterBack, …), so they will not use keepaway roles.
 
 ### Agent options
-- `src/player.conf`: `team_name : HELIOS_base`, `version : 18`, `synch_see : on`, `host : localhost`, `port : 6000`, `use_communication : on`, `hear_opponent_audio : off`, `log_dir : /tmp`, `debug_log_ext : .log`, and `debug_*` switches (commented-out `offline_logging`, `debug_server_*`).
+- `src/player.conf`: `team_name : HELIOS_base`, `version : 19` (needed to receive the v19 server params such as `full_view`), `synch_see : on`, `host : localhost`, `port : 6000`, `use_communication : on`, `hear_opponent_audio : off`, `log_dir : /tmp`, `debug_log_ext : .log`, and `debug_*` switches (commented-out `offline_logging`, `debug_server_*`).
 - `src/coach.conf`: `port : 6002`, `interval_msec : 50`, `use_eye : on`, `hear_say : on`; `use_team_graphic` is commented out.
-- The file has no `gaussian_see` or `dist_noise_rate` entries, and nothing in helios reads those keys (see [player-behaviors](player-behaviors.instructions.md)).
+- The file has no `gaussian_see` or `dist_noise_rate` entries (`gaussian_see : on` may be added: librcsc reads it), and nothing in helios code reads those keys (see [player-behaviors](player-behaviors.instructions.md)).
 
 ## Patterns & Conventions
 - Keep set-specific files parallel: the same filenames in each set directory, the same 11 role slots.

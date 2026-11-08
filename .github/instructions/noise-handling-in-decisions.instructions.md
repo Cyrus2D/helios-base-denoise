@@ -4,12 +4,24 @@ applyTo: "src/player/**"
 # Noise Handling in Helios Decisions (src/player)
 
 ## TL;DR
-Helios has no observation-noise model: it takes librcsc's fused `pos()/vel()` as truth and compensates only with (a) server MOVEMENT noise margins (`playerRand`, `ballRand`, `kickRand`), (b) fixed kickable-area shrinkage, and (c) age-count (`posCount`) thresholds and bonus steps.
+By default, Helios uses librcsc's fused position and velocity and applies movement margins, kickable-area adjustments and age thresholds. The optional Exp2 tracker can replace self position for the decision.
 - `playerRand()/ballRand()` are movement/kick noise parameters, not the `see` distance/direction noise; none of the see-noise knobs (`dist_noise_rate`, `focus_dist_noise_rate`, `land_*`) is read by helios code, and `gaussian_see` is only an optional `player.conf` key handled inside librcsc (see §5).
 - Uncertainty of an opponent = `posCount()` converted to extra reach steps (`bound(0, posCount, 3..8)`); uncertainty of a teammate/ball = thresholds.
-- `posError`/`velError`/`pos_error` are never used in `src/player` (grep verified).
-- `fullstate` appears only in the start scripts (`src/start.sh.in:258-277`, `--use_fullstate`), not in C++.
+- The Exp2 tracker reads raw visual-fix error bounds as inputs. Fullstate is used for evaluation in reference mode.
 - **Open the full file when:** adding denoising, changing a margin or `posCount` threshold, or hooking filtered pos/vel into planning.
+
+## Exp2 self localization
+
+`src/player/denoise/` owns weight loading, features, recurrent state and the
+`self_localization.csv` sidecar. `shadow` logs the candidate and keeps the
+librcsc estimate. `apply` supplies the candidate to the decision model when
+ready. Velocity and orientation come from librcsc. The correction happens
+after current visual ball and player localization.
+
+Inference runs in quantized `PlayOn`. Gaussian and fullstate override are
+rejected at startup and noise-free see bypasses inference. After a mode
+change, cycle gap, move or rejected correction, the tracker waits for a
+fresh fix and warms up for five updates before applying a position.
 
 ## 1. Movement-noise margins (`playerRand` / `ballRand` / `kickRand`)
 All use `ServerParam::i()`; pattern `kickableArea − |ball_vel|·ballRand − |my_vel|·playerRand − 0.15`.

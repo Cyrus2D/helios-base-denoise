@@ -55,6 +55,8 @@ fullstateopt=""
 denoise_log_dir=""
 denoise_game_id=""
 denoise_opt=""
+self_mode="off"
+self_model=""
 
 usage()
 {
@@ -88,6 +90,8 @@ usage()
    echo "                               (use together with --fullstate reference to log the ground truth)"
    echo "  --denoise-game-id ID         game id directory name (default: timestamp, shared by all players)"
    echo "  --no-denoise-landmarks       does not write the landmarks table"
+   echo "  --self-localization MODE     selects off (default), shadow or apply"
+   echo "  --self-localization-model FILE  Step 05 weights for shadow/apply"
    echo "  --no-denoise-raw             does not write the raw message stream table") 1>&2
 }
 
@@ -301,6 +305,19 @@ do
       shift 1
       ;;
 
+    --self-localization|--self-localization-model)
+      if [ $# -lt 2 ]; then
+        usage
+        exit 1
+      fi
+      if [ "$1" = "--self-localization" ]; then
+        self_mode="$2"
+      else
+        self_model="$2"
+      fi
+      shift
+      ;;
+
     --no-denoise-landmarks)
       denoise_opt="${denoise_opt} --denoise_log_landmarks false"
       ;;
@@ -340,6 +357,20 @@ if [ X"${debug_server_port}" = X'' ]; then
   debug_server_port=`expr ${port} + 32`
 fi
 
+case "$self_mode" in
+  off) ;;
+  shadow|apply)
+    if [ ! -r "$self_model" ] || [ -z "$denoise_log_dir" ]; then
+      echo "Self localization needs --self-localization-model FILE and --denoise-log-dir DIRECTORY." >&2
+      exit 1
+    fi
+    ;;
+  *)
+    echo "Invalid self localization mode: $self_mode" >&2
+    exit 1
+    ;;
+esac
+
 opt="--player-config ${player_conf} --config_dir ${config_dir}"
 opt="${opt} -h ${host} -p ${port} -t ${teamname}"
 opt="${opt} ${fullstateopt}"
@@ -359,6 +390,9 @@ ping -c 1 $host
 # denoise arguments are passed separately and quoted (paths/ids may contain spaces)
 launch_player()
 {
+  if [ "$self_mode" != off ]; then
+    set -- "$@" --self-localization "$self_mode" --self-localization-model "$self_model"
+  fi
   if [ X"${denoise_log_dir}" != X'' ]; then
     $player ${opt} "$@" --denoise_log_dir "${denoise_log_dir}" --denoise_game_id "${denoise_game_id}" ${denoise_opt} &
   else

@@ -1,4 +1,6 @@
 add_executable(sample_player
+  denoise/self_localization.cpp
+  denoise/self_position_gru.cpp
   basic_actions/basic_actions.cpp
   basic_actions/bhv_before_kick_off.cpp
   basic_actions/bhv_emergency.cpp

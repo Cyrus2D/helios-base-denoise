@@ -29,6 +29,7 @@
 #endif
 
 #include "sample_player.h"
+#include "denoise/self_localization.h"
 
 #include "strategy.h"
 #include "field_analyzer.h"
@@ -168,11 +169,11 @@ SamplePlayer::initImpl( CmdLineParser & cmd_parser )
     result &= Strategy::instance().init( cmd_parser );
 
     rcsc::ParamMap my_params( "Additional options" );
-#if 0
-    std::string param_file_path = "params";
-    param_map.add()
-        ( "param-file", "", &param_file_path, "specified parameter file" );
-#endif
+    std::string self_mode = "off";
+    std::string self_model;
+    my_params.add()
+        ( "self-localization", "", &self_mode, "self localization: off, shadow or apply" )
+        ( "self-localization-model", "", &self_model, "exported self localization weights file" );
 
     cmd_parser.parse( my_params );
 
@@ -192,6 +193,31 @@ SamplePlayer::initImpl( CmdLineParser & cmd_parser )
     if ( ! result )
     {
         return false;
+    }
+
+    if ( self_mode != "off" )
+    {
+        const auto & id = config().denoiseGameId();
+        if ( config().gaussianSee() || config().useFullstate()
+             || config().denoiseLogDir().empty() || id.empty() || id == "." || id == ".." )
+        {
+            std::cerr << "Self localization requires quantized see, reference or ignored fullstate,"
+                      << " and a denoise log directory and game ID." << std::endl;
+            return false;
+        }
+
+        try
+        {
+            auto tracker = std::make_shared< denoise::SelfLocalization >( self_mode, self_model );
+            setSelfPositionEstimator( [this, tracker]( const WorldModel & world, const std::string & command ) {
+                return tracker->estimate( *this, world, command );
+            } );
+        }
+        catch ( const std::exception & error )
+        {
+            std::cerr << "Self localization: " << error.what() << std::endl;
+            return false;
+        }
     }
 
     if ( ! Strategy::instance().read( config().configDir() ) )

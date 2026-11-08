@@ -53,6 +53,17 @@ helios-base builds with either CMake or autotools against an installed librcsc, 
 - `-u` only matters with `--offline-client-mode` (`:322, 340-346`); in online mode it has no effect.
 - Each process gets `--player-config src/player.conf --config_dir <set> -h HOST -p PORT -t TEAM` (`:308-309`).
 
+### Exp2 self localization
+
+Build and install librcsc from `denoise-exp2` before building this branch.
+Pass `--self-localization shadow|apply --self-localization-model FILE` to
+`start.sh` with a readable Step 05 weight export and `--denoise-log-dir DIR`.
+The launcher passes the options only to players. Use `--fullstate reference`
+to score against server truth and pass the same `--denoise-game-id` to both teams.
+Use a distinct ID per match in parallel runs. The default mode is `off`.
+See the server repository's `experiments/exp2/README.md` for the full run and
+export workflow.
+
 ### `src/keepaway.sh.in` (keepers, takers, trainer)
 - Options: `-h`, `-p`, `-P`, `-f DIR`, `--offline-logging`, `--offline-client-mode`, `--debug`, `--debug-server-*`, `--log-dir`, `--debug-log-ext`, `--fullstate`.
 - Starts 3 players as team `Keeper` with `formations-keeper` (`:258-268`), then 2 as `Taker` with `formations-taker` (`:272-282`), then `sample_trainer -h HOST -t Keeper --use_ear on` unless offline (`:284-286`). No coach.
